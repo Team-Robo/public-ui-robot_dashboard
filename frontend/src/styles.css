@@ -1,0 +1,487 @@
+:root {
+  color-scheme: dark;
+  --bg: #14161a;
+  --bg-panel: #1c1f26;
+  --border: #2b2f3a;
+  --text: #e6e8eb;
+  --text-dim: #9aa1ac;
+  --accent: #4c8dff;
+  --ok: #3ecf6e;
+  --warn: #e0a03c;
+  --danger: #e0473f;
+  font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* A hard ceiling, not just a floor - `min-height` let the whole page grow
+   taller than the viewport for any tab with enough content (the Control
+   tab's target list already did this), which meant .tab-content's own
+   `overflow: auto` never actually got to engage as an internal scrollbar
+   - the page itself just grew to fit instead. That's what left the
+   split-mode resize handle (anchored to its own box's bottom-right
+   corner) sitting below the visible viewport, unreachable. `height` caps
+   #root for real, so header/nav stay put and .tab-content scrolls
+   internally - true for every tab, not just split mode. */
+#root { display: flex; flex-direction: column; height: 100vh; }
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-title { font-weight: 600; margin-right: auto; }
+
+.estop-button {
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.estop-button:hover { filter: brightness(1.1); }
+.estop-button:active { filter: brightness(0.9); }
+
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.25rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.tab-button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.tab-content { flex: 1; min-height: 0; padding: 1.25rem; overflow: auto; }
+
+/* Big E-Stop / operations split mode - .tab-content becomes just a flex
+   row shell with no padding/scroll of its own, so .operations-split-content
+   is the single scroll owner rather than two nested overflow:auto boxes
+   (the same phantom-scrollbar shape TerminalPane's no-wrap split had to
+   fix once already - not repeating that here). */
+.tab-content.split-mode { padding: 0; overflow: hidden; display: flex; min-height: 0; }
+
+.operations-split { display: flex; flex: 1; min-height: 0; min-width: 0; }
+
+/* Dragging disables text selection page-wide - without this, a fast drag
+   across the row selects the target list / button text underneath the
+   moving cursor, which fights the resize itself. */
+.operations-split.dragging { user-select: none; }
+
+.operations-split-content {
+  /* Real value always comes inline from OperationsSplit.tsx (ratio before
+     a drag, pinned px after) - this is only a defensive fallback. */
+  flex: 7 1 0%;
+  min-width: 320px;
+  max-width: 85%;
+  /* Flex items default to min-height: auto (their content's intrinsic
+     height), which lets a tall child (e.g. a long target list) push this
+     row - and the whole page - taller than the viewport instead of
+     scrolling internally. min-height: 0 is what actually lets
+     `overflow: auto` do its job here. */
+  min-height: 0;
+  overflow: auto;
+  padding: 1.25rem;
+}
+
+/* A dedicated element, not CSS `resize` (which only ever offers a single
+   corner-sized grab target) - this spans the row's full height and is
+   grabbable anywhere along it, like a real split-pane seam. */
+.operations-split-divider {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--border);
+}
+.operations-split-divider:hover,
+.operations-split.dragging .operations-split-divider {
+  background: var(--accent);
+}
+
+.operations-split-estop {
+  /* flex-grow: 3 pairs with content's default flex-grow: 7 for the 70/30
+     default split - and once content is pinned to a dragged px width
+     (flex-grow: 0), this is the row's only remaining grower, so it just
+     absorbs 100% of whatever's left regardless of this exact ratio. */
+  flex: 3 1 0%;
+  min-width: 220px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.estop-button-giant {
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  /* No max-width/max-height - fills the entire estop column (minus its
+     padding) regardless of how wide that column gets, dragged or not. */
+  width: 100%;
+  height: 100%;
+  font-weight: 800;
+  /* Fixed, not vw-scaled - text stretched to match a wide column looked
+     disproportionate and didn't read as cleanly as a plain fixed size. */
+  font-size: 4rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.estop-button-giant:hover { filter: brightness(1.1); }
+.estop-button-giant:active { filter: brightness(0.9); }
+.estop-button-giant:disabled { cursor: not-allowed; opacity: 0.7; }
+
+/* PublishPanel's sub-tab bar - same active/underline idiom as .tab-button,
+   scaled down and boxed since it lives inside a panel, not the page nav. */
+.subtab-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-dim);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.subtab-button:hover { color: var(--text); }
+.subtab-button.active { color: var(--text); background: var(--bg-panel); border-bottom-color: var(--accent); }
+
+.subtab-running-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+
+.subtab-close { color: var(--text-dim); padding: 0 0.2rem; border-radius: 3px; line-height: 1; cursor: pointer; }
+.subtab-close:hover { color: var(--danger); background: rgba(224, 71, 63, 0.15); }
+
+.subtab-add {
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  width: 1.8rem;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+.subtab-add:hover { color: var(--text); border-color: var(--accent); }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+th { color: var(--text-dim); font-weight: 500; font-size: 0.85rem; }
+
+/* Control tab's per-category tables: table-layout:fixed makes the
+   colgroup's widths authoritative instead of auto layout's content-based
+   heuristics (which is what kept dumping leftover space into whichever
+   column it favored). width stays 100% - same as the plain `table` rule
+   above - so the table still fills its row; only HOW that width gets
+   split across columns changes. */
+.control-table { table-layout: fixed; width: 100%; }
+
+.badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
+.badge-running { background: rgba(62,207,110,0.15); color: var(--ok); }
+.badge-stopped { background: rgba(154,161,172,0.15); color: var(--text-dim); }
+.badge-starting, .badge-stopping { background: rgba(224,160,60,0.15); color: var(--warn); }
+.badge-failed { background: rgba(224,71,63,0.15); color: var(--danger); }
+.badge-exited { background: rgba(154,161,172,0.15); color: var(--text-dim); }
+/* Separate from the state badges above - this is an OVERLAY on whatever
+   state the row already shows (a pid left over from a previous
+   dashboard_server run can be alive regardless of this instance's own
+   state for that target, which reads 'stopped' since it never spawned
+   it). Dashed border + pointer cursor mark it as its own clickable thing,
+   not just another read-only status pill. */
+.badge-orphaned {
+  background: rgba(224,71,63,0.12);
+  color: var(--danger);
+  border: 1px dashed var(--danger);
+  cursor: pointer;
+  margin-left: 0.4rem;
+}
+.badge-orphaned:hover { background: rgba(224,71,63,0.28); }
+
+button.action {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  margin-right: 0.35rem;
+}
+button.action:hover { border-color: var(--accent); }
+button.action:disabled { opacity: 0.4; cursor: not-allowed; }
+button.action.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+.pinned-panel {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 1rem;
+  margin-bottom: 1.5rem;
+  background: rgba(76, 141, 255, 0.04);
+}
+.pinned-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
+.pinned-header h3 { margin: 0; }
+
+select, input[type="text"], input[type="number"], textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+}
+/* The rule above only ever reached the CLOSED select box - its dropdown
+   POPUP is rendered by the browser/OS, not this page. Two separate things
+   needed to reach it, neither one alone was enough (confirmed live -
+   option-only still showed a plain white Windows Chrome popup):
+     1. color-scheme set directly on the CONTROL itself, not just inherited
+        from :root - Chrome/Windows specifically has been unreliable about
+        using an inherited color-scheme to decide how to paint native
+        select popups; setting it here is what MDN/Chrome's own guidance
+        calls out as the reliable path.
+     2. option background/color for browsers (Firefox, and Chromium on
+        Linux/Mac) that DO respect page CSS on the popup's rows.
+   Pre-existing gap since this app's first build, not new. */
+select {
+  color-scheme: dark;
+}
+select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.action-goal-input {
+  width: 100%;
+  max-width: 480px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  resize: vertical;
+  display: block;
+}
+
+/* Positioning context for the floating Copy/Clear buttons - a plain block,
+   sized by the terminal-pane child inside it, so it doesn't affect layout
+   at all beyond being the anchor .terminal-pane-actions' absolute position
+   is relative to. */
+.terminal-pane-wrap { position: relative; }
+
+.terminal-pane-actions {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: flex;
+  gap: 0.3rem;
+}
+/* terminal-pane scrolls vertically (overflow-y: auto) - once it's
+   actually overflowing, plain 0.4rem from the edge sits right under the
+   scrollbar track. TerminalPane only adds this class when scrollHeight
+   actually exceeds clientHeight, so a pane with no scrollbar right now
+   keeps the buttons flush against the corner instead of always leaving a
+   gap for a scrollbar that isn't there. */
+.terminal-pane-actions.with-scrollbar { right: calc(0.4rem + 16px); }
+
+.terminal-pane-btn {
+  background: rgba(20, 22, 26, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+  opacity: 0.45;
+}
+.terminal-pane-btn:hover { opacity: 1; }
+.terminal-pane-btn.accent:hover { color: var(--accent); border-color: var(--accent); background: rgba(76, 141, 255, 0.15); }
+.terminal-pane-btn.danger:hover { color: var(--danger); border-color: var(--danger); background: rgba(224, 71, 63, 0.15); }
+
+.terminal-pane {
+  background: #0c0d10;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+  height: 240px;
+  min-height: 80px;
+  resize: vertical;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  display: flex;
+  flex-direction: column-reverse; /* anchors content to the bottom instead of the top when it's shorter than the box, and keeps the natural scroll position at the latest content if it overflows */
+}
+
+/* Outer: vertical scroll only. Overrides the base class's flex
+   column-reverse (built for log panes - anchors newest content to the
+   bottom, auto-scrolled); a one-shot schema tree isn't a log, it should
+   read from the top like normal text. */
+.terminal-pane.no-wrap-outer {
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Inner: horizontal scroll only, sized against the outer's own width
+   (already net of its vertical scrollbar) - not the outer's box directly,
+   so the two scrollbars' width calculations can't feed back into each
+   other and produce a phantom scrollbar. */
+.no-wrap-inner {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.param-row.rejected { outline: 1px solid var(--danger); }
+.param-group-row { cursor: pointer; background: rgba(255,255,255,0.02); }
+.param-group-row:hover { background: rgba(255,255,255,0.05); }
+.param-group-row td { font-weight: 600; }
+
+.tree-row { padding: 0.3rem 0.5rem; border-radius: 4px; }
+.tree-row.group { cursor: pointer; font-weight: 600; }
+.tree-row.group:hover { background: rgba(255, 255, 255, 0.05); }
+.tree-row.leaf { cursor: default; }
+.tree-row.leaf:has(.tree-caret) { cursor: pointer; }
+.tree-row.leaf:has(.tree-caret):hover { background: rgba(255, 255, 255, 0.05); }
+.tree-caret { display: inline-block; width: 1em; color: var(--text-dim); }
+
+/* Box-drawing connector prefix (TfTreeView) - needs monospace so │/├──/└──
+   line up vertically across sibling rows, and `pre` since the alignment
+   depends on exact run-of-spaces width that plain HTML would collapse. */
+.tf-guide { font-family: ui-monospace, monospace; white-space: pre; color: var(--text-dim); }
+.hint { color: var(--text-dim); font-size: 0.85rem; }
+
+.bool-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.bool-btn {
+  background: var(--bg);
+  border: none;
+  color: var(--text-dim);
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+}
+.bool-btn + .bool-btn { border-left: 1px solid var(--border); }
+.bool-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+.bool-btn.active { background: var(--accent); color: white; font-weight: 600; }
+.bool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Same visual language as .bool-btn, standalone rather than paired - for a
+   single on/off toggle (e.g. Control/Visualization tab flag checkboxes)
+   rather than a choice between two labeled options. */
+.flag-toggle {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.flag-toggle:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+.flag-toggle.active { background: var(--accent); color: white; font-weight: 600; border-color: var(--accent); }
+.flag-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
+/* .text-flag inherits everything above from .flag-toggle - only the parts
+   that make sense for a button (pointer cursor, no intrinsic width) need
+   overriding for a text input. */
+.text-flag { cursor: text; width: 9rem; }
+.text-flag:disabled { cursor: not-allowed; }
+
+/* select flags only - unlike a toggle (its own button text IS the label)
+   or text (its placeholder already says what it's for), a select's own
+   control just shows a value - "None"/whatever's chosen - with nothing
+   saying what it configures. */
+.flag-labeled { display: inline-flex; align-items: center; gap: 0.35rem; }
+.flag-label { color: var(--text-dim); font-size: 0.82rem; white-space: nowrap; }
+
+/* One flag definition in the Config tab's editor - a subtle box groups its
+   type-dependent rows (arg/placeholder, or the options sub-list) as one
+   visual unit instead of them reading as unrelated loose rows. */
+.flag-editor-row { border: 1px solid var(--border); border-radius: 4px; padding: 0.4rem; margin-bottom: 0.4rem; }
+
+input.invalid { border-color: var(--danger); }
+.input-error { color: var(--danger); font-size: 0.78rem; margin-top: 0.2rem; }
+
+.params-toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.params-toolbar input[type="text"] { min-width: 280px; }
+
+mark { background: rgba(76, 141, 255, 0.35); color: inherit; border-radius: 2px; padding: 0 0.1em; }
+
+.qos-mismatch-badge {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: rgba(224, 71, 63, 0.15);
+  color: var(--danger);
+  cursor: help;
+}
+
+.fake-publish-count { color: var(--warn); cursor: help; }
+
+/* Dropdown.tsx - a headless Radix Select styled fully by hand, used in
+   place of a plain <select> wherever the dropdown's own popup/arrow-box
+   coloring matters (a plain <select>'s popup and arrow-box are rendered by
+   the browser/OS, not this page - color-scheme/option CSS couldn't fully
+   reach either one on every browser/OS combo tried). Radix renders
+   everything as real DOM, so this is the whole visual surface - nothing
+   left uncontrollable to fight. */
+.dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.dropdown-trigger:hover:not([data-disabled]) { background: rgba(255, 255, 255, 0.06); }
+.dropdown-trigger[data-disabled] { opacity: 0.4; cursor: not-allowed; }
+.dropdown-trigger[data-placeholder] { color: var(--text-dim); }
+.dropdown-arrow { color: var(--text-dim); font-size: 0.7rem; line-height: 1; }
+.dropdown-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  /* Must beat SettingsModal's own overlay (zIndex: 1000, inline in
+     SettingsModal.tsx) - confirmed live as the actual bug: the Config
+     editor's dropdowns opened and worked (keyboard nav, state changes) but
+     were rendered BEHIND the modal panel the whole time, invisible despite
+     being later in the DOM (a portaled node's DOM position doesn't save it
+     from a lower z-index once an ancestor-unrelated element establishes a
+     higher one). The plain Control tab (no modal) never hit this - nothing
+     there has a z-index above the default stacking order. Comfortably
+     above 1000 in case something else ever sits near that level too. */
+  z-index: 1100;
+}
+.dropdown-item {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+.dropdown-item[data-highlighted] { background: var(--accent); color: white; }
+.dropdown-item[data-state="checked"] { font-weight: 600; }

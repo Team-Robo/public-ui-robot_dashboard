@@ -1,0 +1,17 @@
+# Battery settings: edited from Settings -> Battery in the dashboard (applies
+# live, no restart). The live copy is ~/.dashboard_battery.yaml, seeded from
+# this template once and never touched by colcon after that.
+#
+# Optional: if enabled, the dashboard spawns `ros2 run battery_monitor
+# battery_monitor` with these values, and its header indicator reads the
+# sensor_msgs/BatteryState that monitor publishes.
+
+enabled: false           # show the header indicator (and subscribe to state_topic)
+spawn_monitor: false     # dashboard starts/restarts battery_monitor itself
+state_topic: /battery_state     # sensor_msgs/BatteryState - monitor output, indicator input
+bms_topic: /bms                 # BMS input topic (if using a compatible monitor)
+hdas_msg_path: ""               # optional path to custom BMS message install
+capital_mode: auto       # how Bms.capital is read: auto | percent | raw
+warn_pct: 25.0
+critical_pct: 10.0
+stale_sec: 5.0

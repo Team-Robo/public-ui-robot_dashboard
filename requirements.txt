@@ -1,0 +1,8 @@
+# Backend Python dependencies (recommended inside ~/dashboard-env)
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pyzmq>=25.0.0
+PyYAML>=6.0
+pydantic>=2.0.0
+ruamel.yaml>=0.17.0
+signallang @ git+https://github.com/KhiemGOM/signallang.git

@@ -1,0 +1,19 @@
+# Declared behavior trees, separate from targets.yaml on purpose - a tree
+# is a different kind of thing from a process to launch (there isn't
+# necessarily a 1:1 relationship), so it gets its own config, on equal
+# footing with process control rather than metadata bolted onto it.
+#
+# target_id cross-references a targets.yaml entry, used to correlate a
+# tree's live state with whether its process is actually running - loose
+# coupling by id, not a nested/shared schema.
+#
+# groot2_port is reserved for the live-feed phase (not used yet).
+# Example entry:
+# trees:
+#   - id: main_tree
+#     label: Demo Tree
+#     package: behaviour_tree
+#     tree_file: trees/main_tree.xml
+#     target_id: bt_demo
+#     groot2_port: 1667
+trees: []

@@ -1,0 +1,70 @@
+# Naming-contract target graph. Credentials must come from the process environment.
+# Operational e-stop exemptions are marked with `estop_exempt: true`; see README.md.
+targets:
+- id: foxglove_bridge
+  label: Foxglove Bridge
+  category: infra
+  kind: launch
+  package: foxglove_bridge
+  launch_file: foxglove_bridge_launch.xml
+  args: []
+  flags:
+  - name: debug
+    label: Debug logging
+    arg: debug:=true
+    type: toggle
+    options: []
+  env: {}
+  autostart: false
+  estop_exempt: true
+  ready_timeout_sec: 10.0
+
+- id: rviz2
+  label: RViz2
+  category: infra
+  kind: run
+  package: rviz2
+  executable: rviz2
+  args: []
+  env: {}
+  autostart: false
+  estop_exempt: true
+  flags: []
+  ready_timeout_sec: 10.0
+
+- id: debug_harness
+  label: Dashboard Debug Harness
+  category: debug
+  kind: run
+  package: robot_dashboard
+  executable: dashboard_debug_harness
+  args: []
+  env: {}
+  autostart: false
+  ready_node_name: /dashboard_debug_harness
+  estop_exempt: false
+  flags: []
+  ready_timeout_sec: 10.0
+
+# Example template for adding a custom ROS 2 node (with optional virtualenv PYTHONPATH):
+# - id: my_perception_node
+#   label: My Perception Node
+#   category: perception
+#   kind: launch            # 'launch' (ros2 launch) or 'run' (ros2 run)
+#   package: my_package
+#   launch_file: my_node.launch.py
+#   args:
+#   - image_topic:=/camera/color/image_raw
+#   flags:
+#   - name: cpu
+#     label: CPU mode
+#     arg: device:=cpu
+#     type: toggle
+#     options: []
+#   env:
+#     # Prepended to the dashboard server's PYTHONPATH/LD_LIBRARY_PATH at spawn time:
+#     # PYTHONPATH: ~/my-venv/lib/python3.10/site-packages
+#   autostart: false
+#   ready_node_name: /my_perception_node
+#   ready_timeout_sec: 30.0
+#   estop_exempt: false
